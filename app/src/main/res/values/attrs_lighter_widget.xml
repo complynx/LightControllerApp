@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="LighterWidget">
+        <attr name="LighterWidgetOutline" format="color" value="#ffffffff"/>
+        <attr name="LighterWidgetMainLight" format="color" value="#ffffffff"/>
+        <attr name="LighterWidgetRimLight" format="color" value="#ffffffff"/>
+    </declare-styleable>
+</resources>

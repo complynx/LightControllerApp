@@ -1,0 +1,19 @@
+<vector android:height="90dp" android:viewportHeight="90.2608"
+    android:viewportWidth="58.757126" android:width="59dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:name="outline">
+        <path
+            android:name="rimLightOutline"
+            android:fillColor="#00000000" android:fillType="evenOdd"
+            android:pathData="m3.2227,87.4637 l52.7407,-15.875v-52.9167l-52.7407,-15.875"
+            android:strokeAlpha="1" android:strokeColor="#fff"
+            android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="1.58749998" />
+        <path
+            android:name="mainLightOutline"
+            android:fillAlpha="1" android:fillColor="#00000000"
+            android:fillType="nonZero"
+            android:pathData="m18.2603,37.4136a7.2972,7.7168 0,0 1,7.2972 7.7168,7.2972 7.7168,0 0,1 -7.2972,7.7168 7.2972,7.7168 0,0 1,-7.2972 -7.7168,7.2972 7.7168,0 0,1 7.2972,-7.7168z"
+            android:strokeAlpha="1" android:strokeColor="#fff"
+            android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="1.58749998"/>
+    </group>
+</vector>

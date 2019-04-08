@@ -1,0 +1,19 @@
+<vector android:height="90dp" android:viewportHeight="90.2608"
+    android:viewportWidth="58.757126" android:width="59dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:name="rimLight">
+        <path
+            android:name="rimLightFar"
+            android:fillColor="#00000000" android:fillType="evenOdd"
+            android:pathData="m6.9106,79.5735 l11.6133,-3.435m13.1361,-3.8849 l12.3372,-3.7783m5.6824,-3.5482v-13.2485m0,-12.7478v-13.5973m-4.3963,-2.627 l-13.6233,-4.0499m-13.1361,-4.114 l-11.6133,-3.3955"
+            android:strokeAlpha=".6" android:strokeColor="#fff"
+            android:strokeLineCap="round" android:strokeLineJoin="miter" android:strokeWidth="0.79374999"/>
+        <path
+            android:name="rimLightNear"
+            android:fillColor="#00000000" android:fillType="evenOdd"
+            android:pathData="m48.9444,20.0802 l-44.0786,-13.1843m47.7973,60.6479v-44.8267m-47.7973,60.6479 l44.0786,-13.1843"
+            android:strokeAlpha="1" android:strokeColor="#fff"
+            android:strokeLineCap="round" android:strokeLineJoin="miter" android:strokeWidth="0.79374999"/>
+    </group>
+
+</vector>

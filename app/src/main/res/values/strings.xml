@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">LightController</string>
+    <string name="widget_ui">Widget UI</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="password">Password</string>
+    <string name="user">User</string>
+    <string name="remote_link">Remote link</string>
+    <string name="local_link">Local link</string>
+</resources>

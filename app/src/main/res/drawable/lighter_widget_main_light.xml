@@ -1,0 +1,20 @@
+<vector android:height="90dp" android:viewportHeight="90.2608"
+    android:viewportWidth="58.757126" android:width="59dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:name="mainLight">
+        <path
+            android:name="mainLightRays"
+            android:fillAlpha="1" android:fillColor="#00000000"
+            android:fillType="nonZero"
+            android:pathData="m37.2358,53.7808 l-9.4312,-4.3388m5.0031,11.6723 l-7.2128,-8.0024m0.5856,12.9024 l-3.8963,-10.4476m-3.9209,12.1683 l0.0139,-11.3023m-7.8306,9.5816 l3.921,-10.4363m-8.3608,2.8492 l5.0443,-5.2944m-5.0443,-2.6837 l2.8259,-0.9799m-2.8259,-4.3389 l2.0433,0.0147m-2.0433,-5.3335 l2.8157,1.0071m-2.8157,-8.9852 l5.0255,5.3153m-0.5857,-12.9024 l3.8963,10.4476m3.921,-12.1683 l-0.0139,11.3023m7.8306,-9.5816 l-3.921,10.4363m10.5481,-5.5363 l-7.2317,7.9815m11.6598,-0.6481 l-9.4414,4.3116m10.9964,4.3388 l-10.2138,-0.0147"
+            android:strokeAlpha=".6" android:strokeColor="#fff"
+            android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="0.79374999"/>
+        <path
+            android:name="mainLightFiller"
+            android:fillAlpha="1" android:fillColor="#fff"
+            android:fillType="nonZero"
+            android:pathData="m18.2603,40.2136a4.7341,4.9168 0,0 1,4.7341 4.9168,4.7341 4.9168,0 0,1 -4.7341,4.9168 4.7341,4.9168 0,0 1,-4.7341 -4.9168,4.7341 4.9168,0 0,1 4.7341,-4.9168z"
+            android:strokeAlpha="1" android:strokeColor="#00000000"
+            android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="0.65224409"/>
+    </group>
+</vector>
