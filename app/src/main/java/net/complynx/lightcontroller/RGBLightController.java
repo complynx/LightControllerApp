@@ -5,22 +5,32 @@ import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.support.graphics.drawable.VectorDrawableCompat;
-import android.support.v4.graphics.drawable.DrawableCompat;
-import android.support.v7.app.AppCompatDelegate;
-import android.util.Log;
-import android.view.ContextThemeWrapper;
-import android.widget.ImageView;
+import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.widget.RemoteViews;
 
 /**
  * Implementation of App Widget functionality.
  */
 public class RGBLightController extends AppWidgetProvider {
+    public final static int STATE_VALID = 5*60*1000; // 5 min
+    public final static int STATE_VALID_NO_WIFI = 60*60*1000; // 1 hour
+    public final static String STATE_VALID_SETTING = "Update invalidation time";
+    public final static String STATE_VALID_NO_WIFI_SETTING = "Update invalidation time no wifi";
     static SharedPreferences state;
+    static boolean is_in_wifi;
+
+    static boolean isInWifi(Context context){
+        WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        if(wm == null) return false;
+        WifiInfo wi = wm.getConnectionInfo();
+        if(wi == null) return false;
+        String wbssid = wi.getBSSID();
+        if(wbssid.equals("") || wbssid.equals("02:00:00:00:00:00")) return false;
+        return wi.getSupplicantState() == SupplicantState.COMPLETED;
+    }
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager,
                                 int appWidgetId) {
@@ -58,9 +68,13 @@ public class RGBLightController extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         state = context.getSharedPreferences("state", Context.MODE_PRIVATE);
+        is_in_wifi = isInWifi(context);
+
         long lu = state.getLong("last update", 0);
         long now = System.currentTimeMillis();
-        if(now - lu > state.getLong("Update invalidation time", 5*60*1000)) {
+        long inv_time = is_in_wifi ? state.getLong(STATE_VALID_SETTING, STATE_VALID)
+                : state.getLong(STATE_VALID_NO_WIFI_SETTING, STATE_VALID_NO_WIFI);
+        if(now - lu > inv_time) {
             Intent intent = new Intent(context, Requester.class);
             intent.putExtra("T", Requester.UPDATE_STATE);
             context.startService(intent);

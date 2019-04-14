@@ -1,12 +1,15 @@
 package net.complynx.lightcontroller;
 
+import android.Manifest;
 import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.DhcpInfo;
+import android.content.pm.PackageManager;
+import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -14,6 +17,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -26,19 +30,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.Array;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
-import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -49,6 +50,8 @@ public class Requester extends Service {
     public static final int NOT_DEFINED=0;
     public static final int UPDATE_STATE=1;
     public static final int UPDATE_STATE_TEST=2;
+    public static final int TOGGLE_MAIN=0x11;
+    public static final int TOGGLE_RGB=0x12;
     public static final int NEED_URL=0xff01;
     public static final int CHECK_CREDENTIALS=0xff02;
     public static final String SESSION_KEY_0 = "00000000000000000000000000000000"; // 32 zeros
@@ -225,6 +228,7 @@ public class Requester extends Service {
         } catch (InterruptedException consumed) {}
         Log.i(TAG, "Terminating receiver");
         receiver.interrupt();
+
         return found_address[0];
     }
 
@@ -261,7 +265,7 @@ public class Requester extends Service {
             }
             is.close();
             JSONObject response = new JSONObject(sb.toString());
-            Log.d("Got response: ", response.toString(4));
+            Log.d(TAG,"Got response: "+ response.toString(4));
 
             return response;
         } catch (Exception e) {
@@ -417,9 +421,8 @@ public class Requester extends Service {
             return sendUbusRequest_a(ubus_obj, method, params);
         }
 
-        void getState(){
-            Log.d(TAG, "Getting status...");
-            JSONObject response = sendUbusRequest("rgbdriver", "status", new JSONObject());
+        void sendRGBCommand(String method, JSONObject params){
+            JSONObject response = sendUbusRequest("rgbdriver", method, params);
 
             if(response == null){
                 Log.d(TAG, "...Not today...");
@@ -432,22 +435,28 @@ public class Requester extends Service {
                 e.printStackTrace();
             }
         }
+        void getState(){ sendRGBCommand("status", new JSONObject()); }
+        void toggleRGB(){ sendRGBCommand("togglergb", new JSONObject()); }
+        void toggleMain(){ sendRGBCommand("togglemain", new JSONObject()); }
 
-        void updateState(JSONObject state){
-            if(state == null) return;
+        void setRGB(){
+            sendRGBCommand("togglemain", new JSONObject());
+        }
+
+        void updateState(JSONObject j_state){
+            if(j_state == null) return;
             try{
-                state = state.getJSONObject("status");
-                SharedPreferences state_file = requester.getSharedPreferences("state", Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = state_file.edit();
+                j_state = j_state.getJSONObject("status");
+                SharedPreferences.Editor editor = state.edit();
 
                 editor.putLong("last update", System.currentTimeMillis());
-                editor.putInt("color", state.getInt("color"));
-                editor.putInt("main", state.getBoolean("main")? 1:0);
-                editor.putInt("transition", state.getInt("transition"));
-                editor.putInt("seconds", state.getInt("seconds"));
-                editor.putInt("useconds", state.getInt("useconds"));
-                editor.putInt("position", state.getInt("position"));
-                editor.putInt("target", state.getInt("target"));
+                editor.putInt("color", j_state.getInt("color"));
+                editor.putInt("main", j_state.getBoolean("main")? 1:0);
+                editor.putInt("transition", j_state.getInt("transition"));
+                editor.putInt("seconds", j_state.getInt("seconds"));
+                editor.putInt("useconds", j_state.getInt("useconds"));
+                editor.putInt("position", j_state.getInt("position"));
+                editor.putInt("target", j_state.getInt("target"));
 
                 editor.apply();
             } catch (JSONException e) {
@@ -463,12 +472,113 @@ public class Requester extends Service {
             sendBroadcast(intent);
         }
 
+        boolean validateLocal_(){
+            String addr = state.getString("local address", "");
+            if(addr.equals("")) return false;
+            WifiManager wm = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+            if(wm == null) return false;
+            WifiInfo wi = wm.getConnectionInfo();
+            if(wi == null) return false;
+            if(wi.getSupplicantState() != SupplicantState.COMPLETED) return false;
+
+            String wbssid = wi.getBSSID();
+            String wssid = wi.getSSID();
+            String sbssid = state.getString("wi bssid", "");
+            String s_ssid = state.getString("wi ssid", "");
+
+            return !wbssid.equals("") && !wbssid.equals("02:00:00:00:00:00")
+                    && wbssid.equals(sbssid) && s_ssid.equals(wssid);
+        }
+        boolean validateLocal(){
+            if(!validateLocal_()){
+                Log.d(TAG, "Local IP is invalid...");
+                SharedPreferences.Editor editor = state.edit();
+                editor.putString("wi bssid", "");
+                editor.putString("wi ssid", "");
+                editor.putString("local address", "");
+                editor.apply();
+                return false;
+            }
+            Log.d(TAG, "Local IP seem valid...");
+            return true;
+        }
+
+        void saveLocalIp(InetAddress addr){
+            WifiManager wm = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+            if(wm == null) return;
+            WifiInfo wi = wm.getConnectionInfo();
+            if(wi == null) return;
+            String wbssid = wi.getBSSID();
+            String wssid = wi.getSSID();
+
+            SharedPreferences.Editor editor = state.edit();
+            editor.putString("wi bssid", wbssid);
+            editor.putString("wi ssid", wssid);
+            editor.putString("local address", addr.getHostAddress());
+            editor.apply();
+        }
+
+        void updateLocalIp(){
+            Thread updater = new Thread(new Runnable() {
+                private static final String TAG="CLX.Requester.IPUpdater";
+                public void run() {
+                    Log.d(TAG, "WiFi testing...");
+                    if (ContextCompat.checkSelfPermission(requester, Manifest.permission.ACCESS_COARSE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED){
+
+                        Log.d(TAG, "No permission");
+                        Intent intent = new Intent(requester, Settings.class);
+                        intent.putExtra("T", NEED_URL);
+                        requester.startActivity(intent);
+                        return;
+                    }
+
+                    WifiManager wm = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+                    if(wm == null){
+                        Log.d(TAG, "wm == null");
+                        return;
+                    }
+                    WifiInfo wi = wm.getConnectionInfo();
+                    if(wi == null){
+                        Log.d(TAG, "wi == null");
+                        return;
+                    }
+                    String wbssid = wi.getBSSID();
+                    if(wbssid.equals("") || wbssid.equals("02:00:00:00:00:00")){
+                        Log.d(TAG, "wbssid = " + wbssid);
+                        return;
+                    }
+                    if(wi.getSupplicantState() != SupplicantState.COMPLETED){
+                        Log.d(TAG, "SupplicantState = " + wi.getSupplicantState().toString());
+                        return;
+                    }
+                    Log.d(TAG, "WiFi ok, updating IP...");
+
+                    InetAddress addr = getLocalIp();
+                    if(addr != null) {
+                        String local_url_postfix = settings.getString("Local link", "");
+                        Log.d(TAG, "Got local address " + addr.getHostAddress());
+
+                        url = "http://" + addr.getHostAddress() + local_url_postfix;
+
+                        Log.d(TAG, "Url: " + url);
+
+                        saveLocalIp(addr);
+                    }else{
+                        Log.d(TAG, "Local IP not found...");
+                    }
+                }
+            });
+            updater.start();
+        }
+
         @Override
         public void handleMessage(Message msg) {
             Log.d(TAG, "Message handler...");
             url = settings.getString("Remote link", "");
+            String local_url_postfix = settings.getString("Local link", "");
 
-            if(url.equals("")){
+            if(url.equals("") || local_url_postfix.equals("")){
                 Intent intent = new Intent(requester, Settings.class);
                 intent.putExtra("T", NEED_URL);
                 requester.startActivity(intent);
@@ -476,24 +586,27 @@ public class Requester extends Service {
                 return;
             }
 
-            InetAddress addr = getLocalIp();
-            if(addr != null) {
-                Log.d(TAG, "Got local address " + addr.getHostAddress());
-                String local_url_postfix = settings.getString("Local link", "");
+            if(validateLocal()) {
+                url = "http://" + state.getString("local address", "") + local_url_postfix;
+            } else {
+                updateLocalIp();
+            }
+            Log.d(TAG, "Using URL: " + url);
 
-                if(local_url_postfix.equals("")){
-                    Intent intent = new Intent(requester, Settings.class);
-                    intent.putExtra("T", NEED_URL);
-                    requester.startActivity(intent);
-                    stopSelf(msg.arg1);
-                    return;
-                }
-
-                url = "http://" + addr.getHostAddress() + local_url_postfix;
-
-                Log.d(TAG, "Url: " + url);
-                getState();
-            }else Log.d(TAG, "No local address found");
+            switch (msg.arg2){
+                case UPDATE_STATE:
+                case UPDATE_STATE_TEST:
+                    getState();
+                    break;
+                case TOGGLE_MAIN:
+                    toggleMain();
+                    break;
+                case TOGGLE_RGB:
+                    toggleRGB();
+                    break;
+                default:
+                    Log.d(TAG, "Message Type is not supported");
+            }
 
             // Stop the service using the startId, so that we don't stop
             // the service in the middle of handling another job
