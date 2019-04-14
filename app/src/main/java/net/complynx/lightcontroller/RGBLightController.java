@@ -1,5 +1,6 @@
 package net.complynx.lightcontroller;
 
+import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
@@ -9,7 +10,10 @@ import android.graphics.Color;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.util.Log;
 import android.widget.RemoteViews;
+
+import java.lang.reflect.Field;
 
 /**
  * Implementation of App Widget functionality.
@@ -19,8 +23,35 @@ public class RGBLightController extends AppWidgetProvider {
     public final static int STATE_VALID_NO_WIFI = 60*60*1000; // 1 hour
     public final static String STATE_VALID_SETTING = "Update invalidation time";
     public final static String STATE_VALID_NO_WIFI_SETTING = "Update invalidation time no wifi";
+    public final static String EVENT_CLICK = "RGBLightController.CLICK";
+    public final static String EVENT_CLICK_RIM = "RGBLightController.CLICK_RIM";
+    public final static String EVENT_CLICK_MAIN = "RGBLightController.CLICK_MAIN";
+    public final static String EVENT_CLICK_COLOR = "RGBLightController.CLICK_COLOR";
+    public final static String TAG = "CLX.RGBLightController";
     static SharedPreferences state;
     static boolean is_in_wifi;
+
+    public static <T> String printObject(T t) {
+        StringBuilder sb = new StringBuilder();
+
+        for (Field field : t.getClass().getDeclaredFields()) {
+            field.setAccessible(true);
+
+            try {
+                sb.append(field.getName()).append(": ").append(field.get(t)).append('\n');
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        return sb.toString();
+    }
+
+    protected PendingIntent getPendingSelfIntent(Context context, String action) {
+        Intent intent = new Intent(context, getClass());
+        intent.setAction(action);
+        return PendingIntent.getBroadcast(context, 0, intent, 0);
+    }
 
     static boolean isInWifi(Context context){
         WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
@@ -32,10 +63,11 @@ public class RGBLightController extends AppWidgetProvider {
         return wi.getSupplicantState() == SupplicantState.COMPLETED;
     }
 
-    static void updateAppWidget(Context context, AppWidgetManager appWidgetManager,
+    void updateAppWidget(Context context, AppWidgetManager appWidgetManager,
                                 int appWidgetId) {
         // Construct the RemoteViews object
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.rgblight_controller);
+        views.setImageViewResource(R.id.img_view_color, R.drawable.lighter_widget_color);
         views.setImageViewResource(R.id.img_view, R.drawable.lighter_widget);
 //        views.setInt(R.id.img_view, "setAlpha", 127);
         views.setImageViewResource(R.id.img_view_main_light, R.drawable.lighter_widget_main_light);
@@ -60,6 +92,13 @@ public class RGBLightController extends AppWidgetProvider {
 
         views.setInt(R.id.img_view_rim_light, "setColorFilter", color);
         views.setInt(R.id.img_view_rim_light, "setAlpha", val);
+//        appWidgetManager.getAppWidgetInfo()
+
+        views.setOnClickPendingIntent(R.id.img_view_color, getPendingSelfIntent(context, EVENT_CLICK_COLOR));
+        views.setOnClickPendingIntent(R.id.click_zone_main, getPendingSelfIntent(context, EVENT_CLICK_MAIN));
+        views.setOnClickPendingIntent(R.id.click_zone_rim1, getPendingSelfIntent(context, EVENT_CLICK_RIM));
+        views.setOnClickPendingIntent(R.id.click_zone_rim2, getPendingSelfIntent(context, EVENT_CLICK_RIM));
+        views.setOnClickPendingIntent(R.id.click_zone_rim3, getPendingSelfIntent(context, EVENT_CLICK_RIM));
 
         // Instruct the widget manager to update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views);
@@ -84,6 +123,23 @@ public class RGBLightController extends AppWidgetProvider {
         for (int appWidgetId : appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId);
         }
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        final String action = intent.getAction();
+        if(action.startsWith(EVENT_CLICK)){
+            if(action.equals(EVENT_CLICK_COLOR)){
+                return;
+            }
+            Intent r_intent = new Intent(context, Requester.class);
+            if(action.equals(EVENT_CLICK_MAIN))
+                r_intent.putExtra("T", Requester.TOGGLE_MAIN);
+            if(action.equals(EVENT_CLICK_RIM))
+                r_intent.putExtra("T", Requester.TOGGLE_RGB);
+            context.startService(r_intent);
+        }else
+            super.onReceive(context, intent);
     }
 
     @Override

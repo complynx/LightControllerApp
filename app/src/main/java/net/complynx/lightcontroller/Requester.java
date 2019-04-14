@@ -52,6 +52,7 @@ public class Requester extends Service {
     public static final int UPDATE_STATE_TEST=2;
     public static final int TOGGLE_MAIN=0x11;
     public static final int TOGGLE_RGB=0x12;
+    public static final int TOUCH_RESOLVE_ACTION=0x21;
     public static final int NEED_URL=0xff01;
     public static final int CHECK_CREDENTIALS=0xff02;
     public static final String SESSION_KEY_0 = "00000000000000000000000000000000"; // 32 zeros
@@ -604,8 +605,11 @@ public class Requester extends Service {
                 case TOGGLE_RGB:
                     toggleRGB();
                     break;
+                case TOUCH_RESOLVE_ACTION:
+                    Log.d(TAG, "Touch resolve action...");
+                    break;
                 default:
-                    Log.d(TAG, "Message Type is not supported");
+                    Log.d(TAG, "Message Type is not supported: " + msg.arg2);
             }
 
             // Stop the service using the startId, so that we don't stop
@@ -636,6 +640,11 @@ public class Requester extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         int type = intent.getIntExtra("T", NOT_DEFINED);
         Log.d(TAG, "service starting " + type);
+
+        if(type == TOUCH_RESOLVE_ACTION){
+            String v = intent.getStringExtra("v");
+            Log.d(TAG, "TOUCH... " + v);
+        }
 
         // For each start request, send a message to start a job and deliver the
         // start ID so we know which request we're stopping when we finish the job

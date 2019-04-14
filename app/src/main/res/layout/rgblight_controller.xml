@@ -2,6 +2,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#00000000"
+    android:id="@+id/rel_layout"
     android:padding="@dimen/widget_margin">
 
     <ImageView
@@ -21,5 +22,66 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:contentDescription="@string/widget_ui" />
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:columnCount="3"
+        android:background="#00000000"
+        android:orientation="horizontal"
+        android:rowCount="3">
+
+        <ImageView
+            android:id="@+id/click_zone_rim1"
+            android:layout_rowSpan="1"
+            android:gravity="center"
+            android:layout_columnSpan="3"
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_height="0dp"
+            android:layout_width="0dp"
+            android:contentDescription="@string/widget_ui" />
+
+        <ImageView
+            android:id="@+id/click_zone_main"
+            android:gravity="center"
+            android:layout_height="0dp"
+            android:layout_width="0dp"
+            android:layout_rowWeight="2"
+            android:layout_columnWeight="2"
+            android:layout_rowSpan="1"
+            android:layout_columnSpan="1"
+            android:contentDescription="@string/widget_ui" />
+
+        <ImageView
+            android:id="@+id/click_zone_rim2"
+            android:gravity="center"
+            android:layout_height="0dp"
+            android:layout_width="0dp"
+            android:layout_rowSpan="1"
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_columnSpan="1"
+            android:contentDescription="@string/widget_ui" />
+
+        <ImageView
+            android:id="@+id/click_zone_rim3"
+            android:gravity="center"
+            android:layout_height="0dp"
+            android:layout_width="0dp"
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_rowSpan="1"
+            android:layout_columnSpan="3"
+            android:contentDescription="@string/widget_ui" />
+    </GridLayout>
+
+
+    <ImageView
+        android:id="@+id/img_view_color"
+        android:layout_width="48dp"
+        android:layout_alignParentEnd="true"
+        android:layout_height="48dp"
+        android:contentDescription="@string/widget_ui"/>
 
 </RelativeLayout>
